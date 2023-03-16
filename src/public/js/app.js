@@ -1,0 +1,1 @@
+alert("hi! I'm a javascript file!")
