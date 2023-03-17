@@ -1,7 +1,6 @@
-import { Socket } from 'dgram';
 import express from 'express'
 import http from 'http'
-import WebSocket from 'ws';
+import { Server } from 'socket.io';
 
 const app = express();
 
@@ -12,11 +11,17 @@ app.get("/", (req, res) => res.render("home"));
 
 const handleListen = () => console.log("Listening on http://localhost:3000");
 
-const server = http.createServer(app);
+const httpServer = http.createServer(app);
+const wsServer = new Server(httpServer);
+
+wsServer.on("connection", (socket) => {
+    console.log(socket);
+});
+
+/*
 const wss = new WebSocket.Server({server});
 
 let sockets = [];
-
 
 wss.on("connection",(socket)=> {
     socket["nickname"] = "Unknown";
@@ -39,6 +44,7 @@ wss.on("connection",(socket)=> {
         }
     });
 });
+*/
 
-server.listen(3000, handleListen);
+httpServer.listen(3000, handleListen);
 
