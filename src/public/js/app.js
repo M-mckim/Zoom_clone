@@ -122,49 +122,58 @@ async function initCall(){
 welcomeForm.addEventListener("submit", handleWelcomeSubmit);
 
 // Socket Code
-socket.on("message", (message) => {
-    console.log("message : ", message);
-});
-
-socket.on("msg_ok", (message) => { // in chrome 2(viewer)
-    console.log("msg_ok");
-});
-
 socket.on("welcome", async() => { // in chrome 1(streamer)
     console.log("someone joined")
     myDataChannel = myPeerConnection.createDataChannel("chat");
     myDataChannel.addEventListener("message", console.log);
-    console.log("made data channel");
+    console.log("made data channel",myDataChannel);
     const offer = await myPeerConnection.createOffer();
+    // print offer type
     myPeerConnection.setLocalDescription(offer)
-    socket.emit("message", "hello!!", roomName);
     socket.emit("offer", offer, roomName);
+    console.log('created offer : ',offer)
     console.log("sent the offer");
 });
 
 socket.on("offer", async(offer) => { // in chrome 2(viewer)
+    console.log('received offer : ', offer)
+    //console.log('received offer.sdp : ', offer.sdp)
     myPeerConnection.addEventListener("datachannel", (event)=>{
+        console.log("datachannel event", event)
         myDataChannel = event.channel;
+        console.log("received data channel", myDataChannel)
         myDataChannel.addEventListener("message", (event)=>{
             console.log(event.data);
         });
     });
     console.log("received the offer");
-    myPeerConnection.setRemoteDescription(offer);
+    try{
+        myPeerConnection.setRemoteDescription(offer); // ICE Candidate 때문에 await 제거했음 문제 생기면 다시 await 추가
+        console.log("Set RemoteDescription(offer) success!");
+    }catch(e){
+        console.log("Set RemoteDescription(offer) ERROR:",e);
+    }
     const answer = await myPeerConnection.createAnswer();
     myPeerConnection.setLocalDescription(answer);
     socket.emit("answer", answer, roomName);
     console.log("sent the answer");
 });
 
+
+
 socket.on("answer", (answer) => { // in chrome 1(streamer)
-    myPeerConnection.setRemoteDescription(answer);
+    try{
+        myPeerConnection.setRemoteDescription(answer);
+        console.log("Set RemoteDescription(answer) success!");
+    }catch(e){
+        console.log("Set RemoteDescription(answer) ERROR:",e);
+    }
     console.log("received the answer");
 });
 
 socket.on("ice", (ice) => { // in chrome 1(streamer)
+    console.log("received candidate :",ice);
     myPeerConnection.addIceCandidate(ice);
-    console.log("received candidate");
 });
 
 // RTC Code
@@ -182,17 +191,39 @@ function makeConnection(){
             ],
         }
     ); 
+    myPeerConnection.addEventListener("icecandidatestatuschange", (event) => {
+        console.log("icecandidatestatuschange", event);
+    });
+    
+    myPeerConnection.addEventListener("iceconnectionstatechange", (event) => {
+        console.log("iceconnectionstatechange", event);
+        console.log("icecandeidate connection state : ", myPeerConnection.iceConnectionState)
+    });
+
+    myPeerConnection.addEventListener("icegatheringstatechange", (event) => {
+        console.log("icegatheringstatechange", event);
+    });
+
+    myPeerConnection.addEventListener("signalingstatechange", (event) => {
+        console.log("signalingstatechange", event);
+    });
+
     myPeerConnection.addEventListener("icecandidate", handleIce);
     myPeerConnection.addEventListener("addstream", handleAddStream);
     myStream.getTracks().forEach((track) => myPeerConnection.addTrack(track, myStream));
+    console.log('mysream : ', myStream)
+    console.log('mytrack from getracks : ', myStream.getTracks())
+
 }
 
 function handleIce(data){
+    console.log("handle ICE data.candidate :", data.candidate);
     socket.emit("ice", data.candidate, roomName);
     console.log("sent candidate")
 }
 
 function handleAddStream(data){
+    console.log("handle Add Stream data :", data);
     const peerFace = document.getElementById("peerFace");
     peerFace.srcObject = data.stream;
 }

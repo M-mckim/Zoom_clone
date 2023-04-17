@@ -20,23 +20,25 @@ wsServer.on("connection", (socket) => {
         socket.join(roomName);
         console.log("room joined", roomName)
         socket.to(roomName).emit("welcome");
-        console.log("welcome emitted")
     });
     socket.on("offer",(offer, roomName) => {
+        console.log("offer :", offer)
         socket.to(roomName).emit("offer", offer);
     });
     socket.on("answer", (answer, roomName) => {
+        console.log("answer :", answer)
         socket.to(roomName).emit("answer", answer);
     });
     socket.on("ice", (ice, roomName) => {
+        console.log("ice :", ice)
         socket.to(roomName).emit("ice", ice);
     });
-    socket.on("message", (message, roomName) => {
-        socket.to(roomName).emit("message", message);
-    });
-    socket.on("msg_ok", (roomName) => {
-        socket.to(roomName).emit("msg_ok");
-    });
+    // socket.on("message", (message, roomName) => {
+    //     socket.to(roomName).emit("message", message);
+    // });
+    // socket.on("msg_ok", (msg, roomName) => {
+    //     socket.to(roomName).emit("msg_ok", msg);
+    // });
 });
 
 
